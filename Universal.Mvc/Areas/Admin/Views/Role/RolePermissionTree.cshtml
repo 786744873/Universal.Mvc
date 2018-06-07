@@ -1,0 +1,137 @@
+﻿@{
+    ViewBag.Title = "角色权限设置";
+}
+@using Universal.Entities
+@using Universal.Framework.Menu
+@using Newtonsoft.Json
+
+@section styles{
+    @*<link href="~/lib/zTree/css/demo.css" rel="stylesheet" />*@
+    <link href="~/lib/zTree/css/metroStyle/metroStyle.css" rel="stylesheet" />
+}
+@section scriptsHeader{
+    <script src="~/lib/zTree/js/jquery.ztree.core.js"></script>
+    <script src="~/lib/zTree/js/jquery.ztree.excheck.js"></script>
+}
+
+@model Universal.Entities.Dto.RolePermissionViewModel
+
+
+<div class="breadcrumbs" id="breadcrumbs">
+    <ul class="breadcrumb">
+        <li>
+            <i class="ace-icon fa fa-home home-icon"></i>
+            <a href="@Url.RouteUrl("mainIndex")">首页</a>
+        </li>
+        <li><a href="@Url.Action("index", "role")">角色列表</a></li>
+        <li class="active">@ViewBag.Title</li>
+    </ul>
+</div>
+
+<div class="page-content">
+    <h1>@ViewBag.Title</h1>
+    <hr />
+    <div class="row">
+        <div class="col-sm-12">
+            <form asp-route="rolePermission" id="formRolePermission" onsubmit="return false;" method="post" class="form-horizontal">
+                @Html.AntiForgeryToken()
+                @Html.HiddenFor(m => m.SysRole.Id)
+                <div class="form-group">
+                    <div class="col-sm-4">
+                        <div class="btn-group">
+                            <button data-toggle="dropdown" class="btn dropdown-toggle">
+                                @Model.SysRole.Name
+                                <span class="ace-icon fa fa-caret-down icon-on-right"></span>
+                            </button>
+                            <ul class="dropdown-menu dropdown-default">
+                                @foreach (var item in Model.RoleList)
+                                {
+                                    <li>
+                                        <a href="@Url.RouteUrl("rolePermission", new { id = item.Id })">@item.Name</a>
+                                    </li>
+                                }
+                            </ul>
+                            <button class="btn btn-info" style="margin-left:10px" id="btnSetPermissions" type="button">
+                                <i class="ace-icon fa fa-check bigger-110"></i>
+                                提交保存
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="field">
+                        <ul style="width:400px;height:200px;" id="categoryTree" class="ztree"></ul>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+
+    var setting = {
+        check: {
+            enable: true,
+        },
+        data: {
+            simpleData: {
+                enable: true
+            }
+        }
+    };
+
+    var zNodes =@Html.Raw((JsonConvert.SerializeObject(Model.TreeList)).Replace("isCheck", "checked"));
+
+    $(function () {
+        $.fn.zTree.init($("#categoryTree"), setting, zNodes);
+
+    })
+
+    //获取选中value值
+    function GetIDs() {
+        var treeObj = $.fn.zTree.getZTreeObj("categoryTree"),
+            nodes = treeObj.getCheckedNodes(true);
+        var ids = "";
+        for (var i = 0; i < nodes.length; i++) {
+            if (nodes[i].pId != -1) {
+                ids += nodes[i].id + ",";
+            }
+        }
+        if (ids.length > 0) {
+            ids = ids.substring(0, ids.length - 1);
+        }
+        return ids;
+    }
+
+    $("#btnSetPermissions").click(function () {
+        var ids = GetIDs();
+        var id = "@Model.SysRole.Id";
+        if (ids != null && id != null && ids.length > 0 && id.length > 0) {
+            $.modal.confirm('您确定给该用户分配权限吗？', function () {
+                var dataStrArr = ids.split(',');
+                var dataIntArr = [];
+                dataIntArr = dataStrArr.map(function (dataArr) {
+                    return +dataArr;
+                });
+                var data = { id: id, sysResource: dataIntArr }
+                $.ajax({
+                    url:"@Url.RouteUrl("rolePermissionTree")",
+                    type: "POST",
+                    data: data,
+                    success: function (results) {
+                        $.modal.gritter(results);
+                        setTimeout(function () {
+                            window.location.href = "@Url.RouteUrl("roleIndex")";
+                        }, 1500);
+                    },
+                    error: function (results) {
+                        alert(results);
+                    }
+                });
+            });
+            
+        }
+    });
+
+</script>

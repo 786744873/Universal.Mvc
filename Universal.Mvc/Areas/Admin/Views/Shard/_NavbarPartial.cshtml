@@ -1,0 +1,137 @@
+﻿@using Microsoft.AspNetCore.Html
+@using Universal.Entities;
+@using System.Text;
+@using System.Linq;
+@using Universal.Core;
+@using Universal.Framework.Infrastructure;
+
+
+@functions{
+    /// <summary>
+    /// 循环生成菜单项
+    /// </summary>
+    /// <param name="category">当前菜单</param>
+    /// <param name="categoryList">所有菜单</param>
+    /// <returns></returns>
+    public HtmlString RenderMenuItem(Category category, List<Category> categoryList)
+    {
+        StringBuilder sb = new StringBuilder();
+        string href = string.Empty;
+        if (!string.IsNullOrEmpty(category.RouteName))//根据路由名字生成菜单链接地址
+        {
+            href = Url.RouteUrl(category.RouteName);
+        }
+        if (!string.IsNullOrEmpty(category.Controller)&&!string.IsNullOrEmpty(category.Action))//根据action和控制器名称生成菜单链接地址
+        {
+            href = Url.Action(category.Action, category.Controller);
+        }
+        sb.AppendFormat(@"<li id='{0}' class='{1}'>",
+            category.ResouceID,
+            Context.Request.Path.Value.Equals(href,StringComparison.InvariantCultureIgnoreCase)?"active":"");
+        var childCategoryList = categoryList.Where(o => o.FatherResource == category.SysResource && o.IsMenu).ToList();
+        sb.AppendFormat(@"<a href='{0}' class='{1}'>",!string.IsNullOrEmpty(href)?href:"javascript:",childCategoryList.Any()? "dropdown-toggle" : "");
+        sb.AppendFormat(@"<i class='{0}'></i>",category.CssClass);
+        sb.AppendFormat(@"<span class='menu-text'> {0} </span>", category.Name);
+        if (childCategoryList.Any())
+        {
+            sb.Append(@"<b class='arrow fa fa-angle-down'></b>");
+        }
+        sb.Append(@"</a>");
+        sb.Append(@"<b class='arrow'></b>");
+
+        #region 子项
+        if (childCategoryList.Any())
+        {
+            sb.Append(@"<ul class='submenu'>");
+            foreach (var childCategoryItem in childCategoryList) {
+                sb.Append(RenderMenuItem(childCategoryItem, categoryList).ToString());
+            }
+            sb.Append(@"</ul>");
+        }
+        #endregion
+
+        sb.Append(@"</li>");
+
+
+        if (Context.Request.Path.Value.Equals(href, StringComparison.InvariantCultureIgnoreCase))
+        {
+            sb.AppendFormat(@"<script>$('#{0}').addClass('open active').parents('li').addClass('open active')</script>", category.FatherID);
+        }
+
+        return new HtmlString(sb.ToString());
+    }
+}
+<div id="sidebar" class="sidebar responsive ace-save-state">
+    <script type="text/javascript">
+        try { ace.settings.loadState('sidebar') } catch (e) { }
+    </script>
+
+    <div class="sidebar-shortcuts" id="sidebar-shortcuts">
+        <div class="sidebar-shortcuts-large" id="sidebar-shortcuts-large">
+            <button class="btn btn-success">
+                <i class="ace-icon fa fa-signal"></i>
+            </button>
+
+            <button class="btn btn-info">
+                <i class="ace-icon fa fa-pencil"></i>
+            </button>
+
+            <!-- #section:basics/sidebar.layout.shortcuts -->
+            <button class="btn btn-warning">
+                <i class="ace-icon fa fa-users"></i>
+            </button>
+
+            <button class="btn btn-danger">
+                <i class="ace-icon fa fa-cogs"></i>
+            </button>
+
+            <!-- /section:basics/sidebar.layout.shortcuts -->
+        </div>
+
+        <div class="sidebar-shortcuts-mini" id="sidebar-shortcuts-mini">
+            <span class="btn btn-success"></span>
+
+            <span class="btn btn-info"></span>
+
+            <span class="btn btn-warning"></span>
+
+            <span class="btn btn-danger"></span>
+        </div>
+    </div><!-- /.sidebar-shortcuts -->
+
+
+    <ul class="nav nav-list">
+    @{
+        IWorkContext _workContext = EnginContext.Current.Resolve<IWorkContext>();
+        var list = _workContext.Categories();
+        if (list != null)
+        {
+            var node = list.Where(o => String.IsNullOrEmpty(o.FatherID)).Where(o => o.IsMenu).OrderBy(o => o.Sort).ThenBy(o => o.Name).ToList();
+            if (node != null)
+            {
+                foreach (var item in node)
+                {
+                    @RenderMenuItem(item, list)
+                }
+            }
+        }
+     }
+    </ul><!-- /.nav-list -->
+
+    @{ 
+        string controller = ViewContext.RouteData.Values["controller"].ToString();
+        string action = ViewContext.RouteData.Values["action"].ToString();
+        //当前
+        var current = list.FirstOrDefault(o => o.Controller == controller && o.Action == action);
+        if (current!=null)
+        {
+            <script>
+                $("#@(current.FatherID)").addClass('active').parents('li').addClass('open active')
+            </script>
+        }
+    }
+    <!-- #section:basics/sidebar.layout.minimize -->
+    <div class="sidebar-toggle sidebar-collapse" id="sidebar-collapse">
+        <i id="sidebar-toggle-icon" class="ace-icon fa fa-angle-double-left ace-save-state" data-icon1="ace-icon fa fa-angle-double-left" data-icon2="ace-icon fa fa-angle-double-right"></i>
+    </div>
+</div>

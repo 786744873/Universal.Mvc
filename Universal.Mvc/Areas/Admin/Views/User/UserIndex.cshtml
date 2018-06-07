@@ -1,0 +1,207 @@
+﻿@using Universal.Entities
+@using Universal.Entities.Dto
+@using Universal.Framework
+@model Universal.Core.DataSourceResult<SysUser, SysUserSearchArg>
+
+@{
+    ViewData["Title"] = "系统用户列表";
+    bool canAddOrUpdate = Html.OwnPermission("editUser");
+    bool canResetPwd = Html.OwnPermission("resetPassword");
+    bool canDelete = Html.OwnPermission("deleteUser");
+    bool canEnable = Html.OwnPermission("enabled");
+    bool canLoginLock = Html.OwnPermission("loginLock");
+}
+
+<div class="breadcrumbs" id="breadcrumbs">
+    <ul class="breadcrumb">
+        <li>
+            <i class="ace-icon fa fa-home home-icon"></i>
+            <a href="@Url.RouteUrl("mainIndex")">首页</a>
+        </li>
+        <li class="active">@ViewData["Title"]</li>
+    </ul>
+</div>
+
+<div class="page-content">
+    <div class="page-header">
+        <h1>
+            @ViewData["Title"]
+        </h1>
+    </div>
+    <div class="row">
+        <div class="col-sm-12">
+            @if (canAddOrUpdate)
+            {
+                <a asp-route="editUser" class="btn btn-pink btn-sm"><i class="glyphicon glyphicon-plus"></i>添加系统用户</a>
+            }
+        </div>
+    </div>
+    <div class="space-2"></div>
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <form asp-route="userIndex" method="get" class="form-inline">
+                        <label>关键字</label>
+                        <input type="text" class="form-control" name="keyWord" style="width:220px;" value="@Model.Paging.RouteArg.keyWord" placeholder="账号、姓名、邮箱、手机号" />
+                        <button type="submit" class="btn btn-purple btn-sm">
+                            查询
+                            <i class="ace-icon fa fa-search icon-on-right bigger-110"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-12">
+            <table id="user_datatable" class="table table-striped table-bordered table-hover dataTable no-footer">
+                <thead>
+                    <tr>
+                        <th width="150px">账号</th>
+                        <th width="100px">姓名</th>
+                        <th width="110px">手机号</th>
+                        <th width="60px">性别</th>
+                        <th width="150px">注册时间</th>
+                        <th width="150px">活动时间</th>
+                        <th width="100px">启用</th>
+                        <th width="120px">登录锁</th>
+                        <th width="50px;">密码</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Data)
+                    {
+                        <tr>
+                            <td>@item.Account</td>
+                            <td>@item.Name</td>
+                            <td>@item.MobilePhone</td>
+                            <td>@item.Sex</td>
+                            <td>@item.CreationTime.ToString("yyyy-MM-dd HH:mm")</td>
+                            <td>@item.LastActivityTime?.ToString("yyyy-MM-dd HH:mm")</td>
+                            <td>
+                                @if (!item.IsAdmin)
+                                {
+                                    if (canEnable)
+                                    {
+                                        if (item.Enabled)
+                                        {
+                                            <lable>
+                                                <input name="enabled" class="ace ace-switch ace-switch-7 user_enabled" value="@item.Id" type="checkbox" checked="checked" />
+                                                <span class="lbl"></span>
+                                            </lable>
+                                        }
+                                        else
+                                        {
+                                            <lable>
+                                                <input name="enabled" class="ace ace-switch ace-switch-7 user_enabled" value="@item.Id" type="checkbox" />
+                                                <span class="lbl"></span>
+                                            </lable>
+                                        }
+                                    }
+                                }
+                            </td>
+                            <td>
+                                @if (!item.IsAdmin)
+                                {
+                                    @if (item.LoginLock)
+                                    {
+                                        <lable>
+                                            <input name="lock" class="ace ace-switch ace-switch-5 user_lock" value="@item.Id" type="checkbox" checked="checked" />
+                                            <span class="lbl"></span>
+                                        </lable>
+                                        @if (item.AllowLoginTime.HasValue && item.AllowLoginTime.Value > DateTime.Now)
+                                        {
+                                            <span class="badge">@((int)item.AllowLoginTime.Value.Subtract(DateTime.Now).TotalMinutes + 1)分</span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <lable data-toggle="tooltip" data-placement="left" title="Tooltip on left">
+                                            <input name="lock" class="ace ace-switch ace-switch-5 user_lock" value="@item.Id" type="checkbox" />
+                                            <span class="lbl"></span>
+                                        </lable>
+                                    }
+                                }
+                            </td>
+                            <td>
+                                @if (!item.IsAdmin)
+                                {
+                                    if (canResetPwd)
+                                    {
+                                        <a href="@Url.RouteUrl("reSetPassWord",new {id=item.Id })" class="btn btn-xs btn-warning btnResetPwd" title="重置密码"><i class="ace-icon fa fa-undo"></i></a>
+                                    }
+                                }
+                            </td>
+                            <td>
+                                @if (canAddOrUpdate)
+                                {
+                                    <a href="@Url.RouteUrl("editUser",new {id=item.Id })" class="btn btn-xs btn-info"><i class="glyphicon glyphicon-trash"></i>修改</a>
+                                }
+
+                                @if (canDelete)
+                                {
+                                    if (!item.IsAdmin)
+                                    {
+                                        <a href="@Url.RouteUrl("deleteUser",new {id=item.Id })" class="btn btn-xs btn-danger btnDelete"><i class="glyphicon glyphicon-trash"></i>删除</a>
+                                    }
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <pager page-value="Model.Paging"></pager>
+        </div>
+    </div>
+    <script>
+        $(function () {
+            $(".user_enabled").click(function (e) {
+                //e.preventDefault();
+                var url = 'http://@Context.Request.Host@Url.RouteUrl("enabled")';
+                var id = $(this).attr("value");
+                var isEnabled = $(this).is(":checked");
+                $.modal.confirm('您确认启用/禁用用户吗？', function () {
+                    $.get(url, { id: id, enabled: isEnabled }, function (data) {
+                        //$(this).attr('checked', isEnabled);
+                        $.modal.gritter(data);
+                    });
+                });
+            })
+
+            $(".user_lock").click(function (e) {
+                //e.preventDefault();
+                var url ='http://@Context.Request.Host@Url.RouteUrl("loginLock")';
+                var id = $(this).attr("value");
+                var isLock = $(this).is(":checked");
+                $.modal.confirm('您确认锁定/解锁用户吗？', function () {
+                    $.get(url, { id: id, loginLock: isLock }, function (data) {
+                        //$(this).attr('checked', isLock);
+                        $.modal.gritter(data);
+                    });
+                });
+            })
+
+            $(".btnResetPwd").click(function (e) {
+                e.preventDefault();
+                var url = $(this).attr('href');
+                $.modal.confirm('您重置密码吗？密码重置后为当前账号', function () {
+                    $.get(url, function (data) {
+                        $.modal.alert(data);
+                    });
+                });
+            })
+
+            $(".btnDelete").click(function (e) {
+                e.preventDefault();
+                var url = $(this).attr('href');
+                $.modal.confirm('删除后将不可恢复，您确定要删除此角色？', function () {
+                    $.get(url, function (data) {
+                        $.modal.alert(data);
+                    });
+                });
+            });
+        });
+    </script>
+</div>

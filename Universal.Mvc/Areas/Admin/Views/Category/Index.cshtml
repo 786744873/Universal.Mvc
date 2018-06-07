@@ -1,0 +1,117 @@
+﻿@using Universal.Entities
+@using Universal.Entities.Dto
+@using Universal.Framework
+@model Universal.Core.DataSourceResult<Category, CategorySearchArg>
+
+@{
+    ViewData["Title"] = "菜单列表";
+}
+
+<div class="breadcrumbs" id="breadcrumbs">
+    <ul class="breadcrumb">
+        <li>
+            <i class="ace-icon fa fa-home home-icon"></i>
+            <a href="@Url.RouteUrl("mainIndex")">首页</a>
+        </li>
+        <li class="active">@ViewData["Title"]</li>
+    </ul>
+</div>
+
+<div class="page-content">
+    <div class="page-header">
+        <h1>
+            @ViewData["Title"]
+        </h1>
+    </div>
+    <div class="space-2"></div>
+    <div class="row" style="height: 100px;">
+        <div class="col-sm-12">
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <form asp-route="categoryIndex" method="get" class="form-inline">
+                        <label>关键字</label>
+                        <input type="text" class="form-control" name="@(nameof(Model.Paging.RouteArg.Name))" style="width:220px;" value="@Model.Paging.RouteArg.Name" placeholder="请输入菜单名称" />
+                        <button type="submit" class="btn btn-purple btn-sm">
+                            查询
+                            <i class="ace-icon fa fa-search icon-on-right bigger-110"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-12">
+            <table id="user_datatable" class="table table-striped table-bordered table-hover dataTable no-footer">
+                <thead>
+                    <tr>
+                        <th width="150px">名称</th>
+                        <th width="100px">资源标识</th>
+                        <th width="60px">上级菜单</th>
+                        <th width="100px">路由</th>
+                        <th width="100px">控制器</th>
+                        <th width="120px">Acion</th>
+                        <th width="50px;">图标样式</th>
+                        <th width="50px;">是否菜单</th>
+                        <th width="50px;">是否启用</th>
+                        <th width="50px;">排序</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Data)
+                    {
+                        <tr>
+                            <td>@item.Name</td>
+                            <td>
+                                @item.SysResource
+                                <br />
+                                简写：@item.ResouceID
+                            </td>
+                            <td>
+                                @item.FatherResource
+                                <br />
+                                简写：@item.FatherID
+                            </td>
+                            <td>@item.RouteName</td>
+                            <td>@item.Controller</td>
+                            <td>@item.Action</td>
+                            <td>
+                                <i class="@item.CssClass"></i>@item.CssClass
+                            </td>
+                            <td>
+                                @if (item.IsMenu)
+                                {
+                                    <button class="btn btn-xs btn-success">
+                                        <i class="ace-icon fa fa-check bigger-120"></i>
+                                    </button>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-xs btn-success">
+                                        <i class="ace-icon fa fa-remove  bigger-120"></i>
+                                    </button>
+                                }
+                            </td>
+                            <td>
+                                @if (item.IsDisabled)
+                                {
+                                    <button class="btn btn-xs btn-success">
+                                        <i class="ace-icon fa fa-check bigger-120"></i>
+                                    </button>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-xs btn-success">
+                                        <i class="ace-icon fa fa-remove  bigger-120"></i>
+                                    </button>
+                                }
+                            </td>
+                            <td>@item.Sort</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <pager page-value="Model.Paging"></pager>
+        </div>
+    </div>
+</div>
