@@ -15,6 +15,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Polly;
+using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
 using Universal.Core;
 using Universal.Entities;
 using Universal.Framework.Filters;
@@ -43,8 +44,28 @@ namespace Universal.Mvc
             //services.AddDbContext<EFDbContext>(options => options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection"),b=>b.UseRowNumberForPaging()));
             //dotnet ef migrations add InitialEFDbContext -c EFDbContext -o Data/Migrations/DemoDB
             services.AddDbContextPool<EFDbContext>(options =>
-                options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection"), b => { b.UseRowNumberForPaging();b.MigrationsAssembly(assembly); })
-                );
+            {
+                switch (Configuration["ConnectionStrings:SqlType"])
+                {
+                    case "SqlServer":
+                        options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection"), b =>
+                        {
+                            b.UseRowNumberForPaging();
+                            b.MigrationsAssembly(assembly);
+                        });
+                        break;
+                    case "MySql":
+                        options.UseMySql(Configuration.GetConnectionString("DefaultConnection"), mySqlOptions =>
+                            {
+                                mySqlOptions.ServerVersion(new Version(5, 6, 21), ServerType.MySql);
+                                mySqlOptions.MigrationsAssembly(assembly);
+                            });
+                        break;
+                    default:
+                        Console.WriteLine("数据库配置无效");
+                        break;
+                }
+            });
 
             // 注入 程序集依赖
             services.AddAssembly("Universal.Services");
@@ -122,10 +143,10 @@ namespace Universal.Mvc
             // 在请求管道中添加认证
             app.UseAuthentication();
 
-            ////初始化数据库
+            //初始化数据库
             Policy.Handle<Exception>().Retry(3).Execute(() => app.InitData());
 
-            ////初始化菜单，保存进数据库
+            //初始化菜单，保存进数据库
             EnginContext.Current.Resolve<IRegisterMenuService>().InitMenuRegister();
 
             // 在请求管道中 使用默认路由

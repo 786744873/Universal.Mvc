@@ -23,7 +23,14 @@ namespace Universal.Mvc.Areas.Admin.Controllers
         [Route("index",Name = "mainindex")]
         public IActionResult Index()
         {
-            _logger.LogError("*****************************");
+            try
+            {
+                _logger.LogError("*****************************");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
             return View();
         }
 

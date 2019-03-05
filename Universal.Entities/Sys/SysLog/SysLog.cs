@@ -12,6 +12,7 @@ namespace Universal.Entities
     [Table("SysLog")]
     public class SysLog
     {
+        [Key]
         public Guid Id { get; set; }
 
         /// <summary>

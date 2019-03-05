@@ -9,9 +9,10 @@ namespace Universal.Entities
     /// <summary>
     /// 系统菜单表
     /// </summary>
-    [Table("Category")]
+    //[Table("Category")]
     public class Category
     {
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
         /// <summary>
         /// 名称
